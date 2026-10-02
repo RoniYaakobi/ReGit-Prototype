@@ -8,7 +8,8 @@ import java.util.HexFormat;
 public class RegitObjects {
     public enum ObjectType {
         BLOB(0),
-        TREE(1);
+        TREE(1),
+        COMMIT(2);
 
         private int priority;
 
@@ -22,21 +23,22 @@ public class RegitObjects {
     }
 
     public static class ObjectId{
-        private byte[] objectHash;
+        private final byte[] objectHash;
+        private final ObjectType objectType;
 
-        public ObjectId(byte[] objectHash){
+        public ObjectId(byte[] objectHash, ObjectType objectType){
             this.objectHash = objectHash;
+            this.objectType = objectType;
         }
 
         public Path getPath(){
             String hex = HexFormat.of().formatHex(objectHash);
 
-
             String prefix = hex.substring(0,2);
-            Path blobFolder = Constants.objectStorePath.resolve(prefix);
+            Path folder = Constants.objectStorePath.resolve(prefix);
 
             String suffix = hex.substring(2);
-            return blobFolder.resolve(suffix + ".blob");
+            return folder.resolve(suffix + "." + objectType.name().toLowerCase());
         }
 
         public byte[] getBytes(){

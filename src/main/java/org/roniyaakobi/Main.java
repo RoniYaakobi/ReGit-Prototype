@@ -1,14 +1,14 @@
 package org.roniyaakobi;
 
 import org.roniyaakobi.objects.Blob;
-import org.roniyaakobi.objects.ObjectStore;
+import org.roniyaakobi.objects.Commit;
 import org.roniyaakobi.objects.RegitObjects;
 import org.roniyaakobi.objects.Tree;
-import org.roniyaakobi.utils.Visualizer;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
@@ -19,15 +19,24 @@ public class Main {
         }
 
         Blob blob = Blob.from(Path.of(args[0]));
-        RegitObjects.ObjectId id  = Hasher.hash(blob);
 
-        byte[] compressed = Compressor.compress(blob);
+        blob.store();
 
-        ObjectStore.StoreBlob(id, compressed);
+        Tree tree = new Tree(
+                List.of(new Tree.TreeEntry("blob", blob.getId(),
+                        RegitObjects.ObjectType.TREE))
+        );
 
-        Visualizer.printBytesAsString(Compressor.decompress(id));
+        tree.store();
 
+        Commit commit = new Commit(
+                tree.getId(),
+                Optional.empty(),
+                new User("Roni", "RoniYaakobi@gmail.com"),
+                Timestamp.now(),
+                "Heh funny"
+        );
 
-
+        commit.store();
     }
 }

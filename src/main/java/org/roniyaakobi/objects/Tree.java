@@ -1,7 +1,5 @@
 package org.roniyaakobi.objects;
 
-import org.roniyaakobi.Compressable;
-import org.roniyaakobi.Hashable;
 import org.roniyaakobi.utils.BytesFormatter;
 
 import java.io.ByteArrayOutputStream;
@@ -9,6 +7,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.zip.DeflaterOutputStream;
@@ -59,7 +59,7 @@ public final class Tree extends RegitObject {
 
     public static String formatEntry(TreeEntry entry){
         return entry.type().name() + " " + entry.name() + "\0" +
-                BytesFormatter.bytesToString(entry.objectId().getBytes());
+        HexFormat.of().formatHex(entry.objectId().getBytes()) + "\n";
     }
 
     public byte[] compress() {
@@ -109,5 +109,51 @@ public final class Tree extends RegitObject {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-1 is not available", e);
         }
+    }
+
+    public static Tree deserialize(byte[] serialized){
+        String serializedString = BytesFormatter.bytesToString(serialized);
+
+        String[] entries = serializedString.split("\n");
+
+        List<TreeEntry> treeEntryList = new ArrayList<TreeEntry>();
+
+        for (String entry : entries){
+
+            byte[] entryBytes = entry.getBytes();
+
+
+            byte[][] metaDataAndId = BytesFormatter.splitAtOffset(
+                    entryBytes,
+                    BytesFormatter.getBytesToNulTerminator(entryBytes)
+            );
+
+
+            byte[] metaData = metaDataAndId[0], idBytes = metaDataAndId[1];
+
+            String[] fields = BytesFormatter.bytesToString(metaData).split(" ");
+
+
+
+            String typeName = fields[0];
+
+            RegitObjects.ObjectType type = RegitObjects.ObjectType.valueOf(typeName);
+
+            String name = fields[1];
+
+            RegitObjects.ObjectId entryId = new RegitObjects.ObjectId(
+                    BytesFormatter.hexToBytes(BytesFormatter.bytesToString(idBytes)),
+                    type
+            );
+
+
+            treeEntryList.add(new TreeEntry(name, entryId, type));
+        }
+
+        return new Tree(treeEntryList);
+    }
+
+    public List<TreeEntry> getEntries(){
+        return entries;
     }
 }

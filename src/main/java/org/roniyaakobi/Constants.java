@@ -4,4 +4,6 @@ import java.nio.file.Path;
 
 public class Constants {
     public static final Path objectStorePath = Path.of("playground/.regit/objectStore");
+
+    public static final String NONE = "None";
 }

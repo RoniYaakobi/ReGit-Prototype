@@ -1,0 +1,48 @@
+package org.roniyaakobi.objects;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.zip.InflaterInputStream;
+
+public interface Compressable {
+    byte[] compress();
+
+     static RegitObject deserialize(RegitObjects.ObjectId id) throws IOException {
+        try (InputStream file = Files.newInputStream(id.getPath());
+             InflaterInputStream inflater = new InflaterInputStream(file);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+
+            inflater.transferTo(output);
+
+            String[] headerAndBody = output.toString().split("\0", 2);
+
+            String header = headerAndBody[0], body = headerAndBody[1];
+
+            String[] headerFields = header.split(" ");
+
+            String objectTypeName = headerFields[0];
+
+            RegitObjects.ObjectType objectType =
+                    RegitObjects.ObjectType.valueOf(objectTypeName.toUpperCase());
+
+            if (objectType == RegitObjects.ObjectType.BLOB){
+                throw new IllegalArgumentException("Cannot deserialize blob object");
+            }
+
+            return objectType.deserialize(body.getBytes());
+        }
+    }
+
+    static byte[] loadObjectId(RegitObjects.ObjectId objectId) throws IOException {
+        try (InputStream file = Files.newInputStream(objectId.getPath());
+             InflaterInputStream inflater = new InflaterInputStream(file);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+
+            inflater.transferTo(output);
+
+            return output.toByteArray();
+        }
+    }
+}

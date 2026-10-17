@@ -1,24 +1,32 @@
 package org.roniyaakobi.objects;
 
 import org.roniyaakobi.Constants;
+import org.roniyaakobi.utils.BytesFormatter;
 
 import java.nio.file.Path;
 import java.util.HexFormat;
+import java.util.function.Function;
 
 public class RegitObjects {
     public enum ObjectType {
-        BLOB(0),
-        TREE(1),
-        COMMIT(2);
+        BLOB(0, null),
+        TREE(1, Tree::deserialize),
+        COMMIT(2, Commit::deserialize);
 
         private int priority;
+        private Function<byte[] ,? extends RegitObject> deserializer;
 
-        ObjectType(int priority){
+        ObjectType(int priority, Function<byte[] ,? extends RegitObject> deserializer){
             this.priority = priority;
+            this.deserializer = deserializer;
         }
 
         public int getPriority(){
             return priority;
+        }
+
+        public RegitObject deserialize(byte[] data) {
+            return deserializer.apply(data);
         }
     }
 
@@ -27,8 +35,18 @@ public class RegitObjects {
         private final ObjectType objectType;
 
         public ObjectId(byte[] objectHash, ObjectType objectType){
+
+
             this.objectHash = objectHash;
             this.objectType = objectType;
+        }
+
+        public static ObjectId fromPath(Path path, ObjectType objectType){
+            String hex = path.getName(0).toString() + path.getName(1).toString();
+
+            byte[] objectHash = BytesFormatter.hexToBytes(hex);
+
+            return new ObjectId(objectHash, objectType);
         }
 
         public Path getPath(){

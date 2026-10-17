@@ -1,8 +1,5 @@
 package org.roniyaakobi.objects;
 
-import org.roniyaakobi.Compressable;
-import org.roniyaakobi.Hashable;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,15 +10,20 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.function.Consumer;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
 public final class Blob extends RegitObject {
     public record StreamData(byte[] bytes, int length) {}
     private final Path path;
+
+    private RegitObjects.ObjectId objectId = null;
     private final long size;
 
     private Blob(Path path, long size) {
         this.path = path;
         this.size = size;
+
+        this.objectId = hash();
     }
 
     public Path getPath(){
@@ -32,7 +34,7 @@ public final class Blob extends RegitObject {
         return size;
     }
 
-    public static Blob from(Path path) throws IOException {
+    public static Blob fromPath(Path path) throws IOException {
         return new Blob(path, Files.size(path));
     }
 
@@ -81,6 +83,10 @@ public final class Blob extends RegitObject {
     }
 
     public  RegitObjects.ObjectId hash() {
+        if (objectId != null){
+            return objectId;
+        }
+
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
 
@@ -97,5 +103,9 @@ public final class Blob extends RegitObject {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-1 is not available", e);
         }
+    }
+
+    public byte[] getAllFileBytes() throws IOException {
+        return Files.readAllBytes(path);
     }
 }

@@ -1,7 +1,5 @@
 package org.roniyaakobi.objects;
 
-import org.roniyaakobi.Compressable;
-import org.roniyaakobi.Hashable;
 import org.roniyaakobi.utils.FileWritingUtil;
 
 import java.io.IOException;

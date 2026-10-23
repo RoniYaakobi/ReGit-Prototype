@@ -1,5 +1,8 @@
 package org.roniyaakobi.objects;
 
+import org.roniyaakobi.Constants;
+import org.roniyaakobi.utils.BytesFormatter;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,12 +11,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterInputStream;
 
 public final class Blob extends RegitObject {
     public record StreamData(byte[] bytes, int length) {}
+
+    public record Comment(String comment, int startLine, int endLine) {
+        public static final String commentDelimeter = "\u001E";
+        public static final String commentFieldDelimeter = "\u001F";
+
+    }
+
+    private final List<Comment> comments = new ArrayList<>();
+
     private final Path path;
 
     private RegitObjects.ObjectId objectId = null;
@@ -26,8 +39,9 @@ public final class Blob extends RegitObject {
         this.objectId = hash();
     }
 
-    public Path getPath(){
-        return path;
+
+    public void addComment(Comment comment){
+        comments.add(comment);
     }
 
     public long getSize(){
@@ -38,8 +52,39 @@ public final class Blob extends RegitObject {
         return new Blob(path, Files.size(path));
     }
 
+    public static Blob fromBytes(Path path, byte[] header){
+        String headerString = BytesFormatter.bytesToString(header);
+
+        String[] headerFields = headerString.split(" ");
+
+        String blobString = headerFields[0], commentsStrings = headerFields[1], sizeString = headerFields[2];
+
+        long size = Long.getLong(sizeString);
+
+        Blob blob = new Blob(path, size);
+
+        if (commentsStrings == Constants.NONE){
+            return blob;
+        }
+
+        String[] comments = commentsStrings.split(Comment.commentDelimeter);
+
+        for (String comment : comments){
+            String[] fields = comment.split(Comment.commentFieldDelimeter);
+
+            int startLine = Integer.getInteger(fields[0]);
+            int endLine = Integer.getInteger(fields[1]);
+
+            String commentString = fields[2];
+
+            blob.addComment(new Comment(commentString, startLine, endLine));
+        }
+
+        return blob;
+    }
+
     public byte[] buildHeaderBytes(){
-        String header = "blob " + getSize() + "\0";
+        String header = "blob " + getComments() + getSize() + "\0";
         return header.getBytes();
     }
 
@@ -105,7 +150,22 @@ public final class Blob extends RegitObject {
         }
     }
 
-    public byte[] getAllFileBytes() throws IOException {
-        return Files.readAllBytes(path);
+    public String getComments() {
+        String commentsString = "";
+
+        for (Comment comment : comments){
+            commentsString +=
+                    comment.startLine() + Comment.commentFieldDelimeter +
+                    comment.endLine() + Comment.commentFieldDelimeter +
+                    comment.comment() + Comment.commentDelimeter;
+        }
+
+        if (commentsString.length() >= 2){
+            commentsString = commentsString.substring(0, commentsString.length() - 2) + " ";
+        } else {
+            commentsString = Constants.NONE;
+        }
+
+        return commentsString;
     }
 }

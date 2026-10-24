@@ -3,6 +3,7 @@ package org.roniyaakobi.objects;
 import org.roniyaakobi.Constants;
 import org.roniyaakobi.utils.BytesFormatter;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HexFormat;
 import java.util.function.Function;
@@ -10,8 +11,18 @@ import java.util.function.Function;
 public class RegitObjects {
     public enum ObjectType {
         BLOB(0, null),
-        TREE(1, Tree::deserialize),
-        COMMIT(2, Commit::deserialize);
+        TREE(1, bytes -> {
+            try {
+                return Tree.deserialize(bytes);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not deserialize bytes");}
+        }),
+        COMMIT(2, bytes -> {
+            try {
+                return Commit.deserialize(bytes);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not deserialize bytes");}
+        });
 
         private int priority;
         private Function<byte[] ,? extends RegitObject> deserializer;
@@ -35,8 +46,6 @@ public class RegitObjects {
         private final ObjectType objectType;
 
         public ObjectId(byte[] objectHash, ObjectType objectType){
-
-
             this.objectHash = objectHash;
             this.objectType = objectType;
         }

@@ -16,8 +16,10 @@ import java.util.zip.DeflaterOutputStream;
 public final class Tree extends RegitObject {
 
     private final List<TreeEntry> entries;
-    public Tree(List<TreeEntry> entries) {
+    public Tree(List<TreeEntry> entries) throws IOException {
         this.entries = entries.stream().sorted(Tree::isBigger).toList();
+
+        store();
     }
     public record TreeEntry(
             String name,
@@ -111,7 +113,7 @@ public final class Tree extends RegitObject {
         }
     }
 
-    public static Tree deserialize(byte[] serialized){
+    public static Tree deserialize(byte[] serialized) throws IOException {
         String serializedString = BytesFormatter.bytesToString(serialized);
 
         String[] entries = serializedString.split("\n");
@@ -156,4 +158,5 @@ public final class Tree extends RegitObject {
     public List<TreeEntry> getEntries(){
         return entries;
     }
+
 }

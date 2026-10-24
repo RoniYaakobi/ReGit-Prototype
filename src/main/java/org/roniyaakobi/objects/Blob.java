@@ -32,11 +32,13 @@ public final class Blob extends RegitObject {
     private RegitObjects.ObjectId objectId = null;
     private final long size;
 
-    private Blob(Path path, long size) {
+    private Blob(Path path, long size) throws IOException {
         this.path = path;
         this.size = size;
 
         this.objectId = hash();
+
+        store();
     }
 
 
@@ -52,7 +54,7 @@ public final class Blob extends RegitObject {
         return new Blob(path, Files.size(path));
     }
 
-    public static Blob fromBytes(Path path, byte[] header){
+    public static Blob fromBytes(Path path, byte[] header) throws IOException {
         String headerString = BytesFormatter.bytesToString(header);
 
         String[] headerFields = headerString.split(" ");

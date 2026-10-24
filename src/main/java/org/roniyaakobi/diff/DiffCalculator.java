@@ -84,6 +84,8 @@ public class DiffCalculator {
         Path subtree = subTreePath.getName(0);
 
         PathState pathState = PathState.NONEXSISTANT;
+
+
         if (pathsToNewEntries.containsKey(subtree) && pathsToOldEntries.containsKey(subtree)) {
             pathState = PathState.PERSERVED;
 
@@ -96,6 +98,7 @@ public class DiffCalculator {
             return new FileDiff(fullPath, null, null,
                     null, pathState);
         }
+        System.out.println(3);
 
 
         return switch (pathsToNewEntries.get(subtree).type()) {
@@ -113,7 +116,16 @@ public class DiffCalculator {
                 Tree oldSubTree = (Tree) Compressable.deserialize(pathsToOldEntries.get(subtree).objectId());
                 Tree newSubTree = (Tree) Compressable.deserialize(pathsToNewEntries.get(subtree).objectId());
 
-                yield ofTrees(fullPath, subTreePath.subpath(1, subTreePath.getNameCount() - 1), oldSubTree, newSubTree);
+                int length = subTreePath.getNameCount();
+
+                yield ofTrees(
+                        fullPath,
+                        length > 1 ?
+                                subTreePath.subpath(1, length) :
+                                Path.of(""),
+                        oldSubTree,
+                        newSubTree
+                );
             }
 
             default -> throw new IllegalStateException("Tree may only contain other trees or blobs.");

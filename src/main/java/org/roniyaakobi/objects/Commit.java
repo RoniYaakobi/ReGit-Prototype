@@ -60,12 +60,14 @@ public final class Commit extends RegitObject {
         User author,
         Timestamp timestamp,
         String message
-    ) {
+    ) throws IOException {
         this.treeId = treeId;
         this.parentId = parentId;
         this.author = author;
         this.timestamp = timestamp;
         this.message = message;
+
+        store();
 
     }
 
@@ -84,7 +86,7 @@ public final class Commit extends RegitObject {
                 message;
     }
 
-    public static Commit deserialize(byte[] serialized){
+    public static Commit deserialize(byte[] serialized) throws IOException {
         SerialziedCommitMetadata metadata = SerialziedCommitMetadata.buildMetadata(serialized);
 
         RegitObjects.ObjectId treeId = new RegitObjects.ObjectId(

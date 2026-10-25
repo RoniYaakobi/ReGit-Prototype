@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TreeBuilder {
+    /**
+     * Build a tree from a directory
+     * @param directory The directory to build the tree from
+     * @return The built tree object
+     * @throws IOException
+     */
     public static Tree buildTree(Path directory) throws IOException {
         Logger.log("Building tree: " + directory.toString());
         List<Tree.TreeEntry> treeEntries = new ArrayList<>();

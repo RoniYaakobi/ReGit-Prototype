@@ -34,10 +34,19 @@ public class RegitObjects {
             this.deserializer = deserializer;
         }
 
+        /**
+         * Get the priority of the ObjectType
+         * @return the priority
+         */
         public int getPriority(){
             return priority;
         }
 
+        /**
+         * Deserialize based on an objectType
+         * @param data the byte array
+         * @return the deserialized object
+         */
         public RegitObject deserialize(byte[] data) {
             return deserializer.apply(data);
         }
@@ -52,6 +61,12 @@ public class RegitObjects {
             this.objectType = objectType;
         }
 
+        /**
+         * Create an objectId from a hash path
+         * @param path the path
+         * @param objectType the type of the object
+         * @return The id of the object
+         */
         public static ObjectId fromPath(Path path, ObjectType objectType){
             String hex = path.getName(0).toString() + path.getName(1).toString();
 
@@ -60,6 +75,10 @@ public class RegitObjects {
             return new ObjectId(objectHash, objectType);
         }
 
+        /**
+         * Get the path of the object file
+         * @return the path of the object file
+         */
         public Path getPath(){
             String hex = HexFormat.of().formatHex(objectHash);
 
@@ -70,6 +89,10 @@ public class RegitObjects {
             return folder.resolve(suffix + "." + objectType.name().toLowerCase());
         }
 
+        /**
+         * Get the bytes of the objectHash
+         * @return the objectHash
+         */
         public byte[] getBytes(){
             return objectHash;
         }

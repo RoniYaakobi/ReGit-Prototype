@@ -51,6 +51,12 @@ public class DiffCalculator {
         }
     }
 
+    /**
+     * Calculate the diff of the two commits, in a specified file
+     * @param file The file to calculate the diff for
+     * @return The diff of the file from the old and the new commits
+     * @throws IOException
+     */
     public FileDiff calculate(Path file) throws IOException {
         Logger.log("Calculating diff for file: " + file.toString());
 
@@ -65,6 +71,15 @@ public class DiffCalculator {
 
     }
 
+    /**
+     * Calculate the diff based on trees
+     * @param fullPath The full path of the file
+     * @param subTreePath The current subTree that needs to be reached
+     * @param oldTree The old tree containing the file
+     * @param newTree The new tree containing the file
+     * @return The diff of the file from the old and the new trees
+     * @throws IOException
+     */
     public static FileDiff ofTrees(Path fullPath, Path subTreePath, Tree oldTree, Tree newTree) throws IOException {
         Logger.log("Calculating diff for file: " + fullPath.toString() +
                 " in trees: " + oldTree.getId().getPath().toString() + " && " +

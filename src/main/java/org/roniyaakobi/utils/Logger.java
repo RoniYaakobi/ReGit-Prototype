@@ -19,6 +19,11 @@ public class Logger {
             DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")
     ) + ".log");
 
+    /**
+     * Log a message, also print if DEBUG mode is on
+     * @param message the message to log
+     * @throws IOException
+     */
     public static void log(String message) throws IOException {
         String formatted = getFormatted(message);
 
@@ -33,6 +38,11 @@ public class Logger {
 
     }
 
+    /**
+     * Format a message to log
+     * @param message the raw message
+     * @return the formatted message for the logs
+     */
     private static String getFormatted(String message){
         return message;
     }

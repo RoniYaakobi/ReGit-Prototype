@@ -24,11 +24,19 @@ public final class FileDiffCalculator {
 
     private record ComparisonEntry(String diff, int lcsIndex) {}
 
-
+    /**
+     * Calculate the diff between two buffers
+     * @param oldBytes old buffer
+     * @param newBytes new buffer
+     * @param fileState the file's state between commits (should always be perserved)
+     * @param path the path of the file from which the buffers originate
+     * @return The diff of the file from the old and the new buffers
+     * @throws IOException
+     */
     public static DiffCalculator.FileDiff calculate(
             byte[] oldBytes,
             byte[] newBytes,
-            DiffCalculator.PathState pathState,
+            DiffCalculator.PathState fileState,
             Path path
     ) throws IOException {
         LcsEntry[][] memo = new LcsEntry[oldBytes.length][newBytes.length];
@@ -65,12 +73,18 @@ public final class FileDiffCalculator {
                 LCS,
                 additionDiffs,
                 deletionDiffs,
-                pathState
+                fileState
         );
 
 
     }
 
+    /**
+     * Build the LCS memo based on the old buffer and the new buffer
+     * @param memo The memo matrix
+     * @param oldBytes The old buffer
+     * @param newBytes The new buffer
+     */
     private static void buildLcsMemo(LcsEntry[][] memo, byte[] oldBytes, byte[] newBytes){
         for (int y = 0; y < oldBytes.length; y++){
             for (int x = 0; x < newBytes.length; x++){
@@ -97,6 +111,13 @@ public final class FileDiffCalculator {
         }
     }
 
+    /**
+     * Backtrack the LCS memo
+     * @param memo The LCS matrix
+     * @param oldBytes The old buffer
+     * @param newBytes The new buffer
+     * @return The LCS calculated
+     */
     private static byte[] backtrackLcs(LcsEntry[][] memo, byte[] oldBytes, byte[] newBytes) {
         int i = oldBytes.length - 1, j = newBytes.length - 1;
 
@@ -131,6 +152,12 @@ public final class FileDiffCalculator {
         return LCS.getBytes();
     }
 
+    /**
+     * Compare an LCS with a buffer
+     * @param LCS The LCS calculated in {@code backtrackLcs()}
+     * @param compare The buffer to compare to
+     * @return
+     */
     private static List<ComparisonEntry> compare(byte[] LCS, byte[] compare){
         int compareIndex = 0, lcsIndex = 0;
 

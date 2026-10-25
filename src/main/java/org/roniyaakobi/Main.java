@@ -35,6 +35,10 @@ public class Main {
         }
     }
 
+    /**
+     * Get the user data from the user
+     * @return A User object based on what the user entered
+     */
     private static User login(){
         System.out.println("Enter your username: ");
         String username = reader.nextLine();
@@ -45,6 +49,10 @@ public class Main {
         return new User(username, email);
     }
 
+    /**
+     * Make a commit
+     * @throws IOException
+     */
     private static void commit() throws IOException {
         System.out.println("Enter the path for the tree: ");
         String path = reader.nextLine().strip();
@@ -63,6 +71,10 @@ public class Main {
         );
     }
 
+    /**
+     * Calculate a diff between two commits and files in the commits
+     * @throws IOException
+     */
     private static void diff() throws IOException {
         System.out.println("Enter the commit hash for the old commit: ");
         String oldHash = reader.nextLine();

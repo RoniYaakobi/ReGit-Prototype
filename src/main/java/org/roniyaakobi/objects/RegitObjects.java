@@ -16,13 +16,15 @@ public class RegitObjects {
                 return Tree.deserialize(bytes);
             } catch (IOException e) {
                 throw new RuntimeException("Could not deserialize bytes");}
-        }),
+            }
+        ),
         COMMIT(2, bytes -> {
             try {
                 return Commit.deserialize(bytes);
             } catch (IOException e) {
                 throw new RuntimeException("Could not deserialize bytes");}
-        });
+            }
+        );
 
         private int priority;
         private Function<byte[] ,? extends RegitObject> deserializer;

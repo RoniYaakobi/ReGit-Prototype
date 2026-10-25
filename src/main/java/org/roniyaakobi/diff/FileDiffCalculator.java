@@ -1,6 +1,7 @@
 package org.roniyaakobi.diff;
 
 import org.roniyaakobi.utils.BytesFormatter;
+import org.roniyaakobi.utils.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,8 +33,10 @@ public final class FileDiffCalculator {
     ) throws IOException {
         LcsEntry[][] memo = new LcsEntry[oldBytes.length][newBytes.length];
 
+        Logger.log("Build the LCS memo: \n");
         buildLcsMemo(memo, oldBytes, newBytes);
 
+        Logger.log("Backtracking the LCS memo: \n");
         byte[] LCS = backtrackLcs(memo, oldBytes, newBytes);
 
         List<ComparisonEntry> additions = compare(LCS, newBytes);

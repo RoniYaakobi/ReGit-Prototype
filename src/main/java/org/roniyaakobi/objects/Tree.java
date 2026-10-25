@@ -1,6 +1,7 @@
 package org.roniyaakobi.objects;
 
 import org.roniyaakobi.utils.BytesFormatter;
+import org.roniyaakobi.utils.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -18,6 +19,21 @@ public final class Tree extends RegitObject {
     private final List<TreeEntry> entries;
     public Tree(List<TreeEntry> entries) throws IOException {
         this.entries = entries.stream().sorted(Tree::isBigger).toList();
+        Logger.log("Tree: ");
+        entries.forEach(entry ->
+                {
+                    try {
+                        Logger.log(
+                                "Name: " + entry.name() + "\n" +
+                                "ObjectId: " + entry.objectId().getPath() + "\n" +
+                                "Type: " + entry.type().name()
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+        Logger.log("\n");
 
         store();
     }

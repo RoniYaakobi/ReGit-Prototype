@@ -1,6 +1,7 @@
 package org.roniyaakobi.objects;
 
 import org.roniyaakobi.Constants;
+import org.roniyaakobi.utils.Logger;
 import org.roniyaakobi.utils.Timestamp;
 import org.roniyaakobi.utils.User;
 import org.roniyaakobi.utils.BytesFormatter;
@@ -67,8 +68,9 @@ public final class Commit extends RegitObject {
         this.timestamp = timestamp;
         this.message = message;
 
-        store();
+        Logger.log("Added commit: \n" + serialize() + "\n\n");
 
+        store();
     }
 
     public byte[] buildHeaderBytes(){

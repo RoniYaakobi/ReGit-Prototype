@@ -2,6 +2,7 @@ package org.roniyaakobi.objects;
 
 import org.roniyaakobi.Constants;
 import org.roniyaakobi.utils.BytesFormatter;
+import org.roniyaakobi.utils.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,6 +34,7 @@ public final class Blob extends RegitObject {
     private final long size;
 
     private Blob(Path path, long size) throws IOException {
+        Logger.log("Created blob object for: " + path.toString() + "\n");
         this.path = path;
         this.size = size;
 

@@ -17,7 +17,6 @@ public abstract class RegitObject implements Compressable, Hashable {
     }
 
     public void store() throws IOException {
-        byte[] compressed = compress();
-        FileWritingUtil.writeFile(getId().getPath(), compressed);
+        FileWritingUtil.writeFile(getId().getPath(), compress());
     }
 }

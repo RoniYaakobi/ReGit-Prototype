@@ -1,6 +1,7 @@
 package org.roniyaakobi.diff;
 
 import org.roniyaakobi.objects.*;
+import org.roniyaakobi.utils.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -26,12 +27,19 @@ public class DiffCalculator {
 
     private final Commit newCommit;
 
-    public DiffCalculator(Commit oldCommit, Commit newCommit){
+    public DiffCalculator(Commit oldCommit, Commit newCommit) throws IOException {
+        Logger.log("Building diff calculator between two commits: " +
+                oldCommit.getId().getPath() + " && " + newCommit.getId().getPath());
+
+
         this.oldCommit = oldCommit;
         this.newCommit = newCommit;
     }
 
     public DiffCalculator(Commit commit) throws IOException {
+        Logger.log("Building diff calculator between two commits: " +
+                commit.getId().getPath() + " && its parent");
+
         this.newCommit = commit;
 
         Optional<RegitObjects.ObjectId> parent = commit.getParentId();
@@ -43,7 +51,15 @@ public class DiffCalculator {
         }
     }
 
+    /**
+     * Calculate the diff of the two commits, in a specified file
+     * @param file The file to calculate the diff for
+     * @return The diff of the file from the old and the new commits
+     * @throws IOException
+     */
     public FileDiff calculate(Path file) throws IOException {
+        Logger.log("Calculating diff for file: " + file.toString());
+
         RegitObjects.ObjectId oldTreeId = oldCommit.getTreeId();
         RegitObjects.ObjectId newTreeId = newCommit.getTreeId();
 
@@ -55,12 +71,27 @@ public class DiffCalculator {
 
     }
 
+    /**
+     * Calculate the diff based on trees
+     * @param fullPath The full path of the file
+     * @param subTreePath The current subTree that needs to be reached
+     * @param oldTree The old tree containing the file
+     * @param newTree The new tree containing the file
+     * @return The diff of the file from the old and the new trees
+     * @throws IOException
+     */
     public static FileDiff ofTrees(Path fullPath, Path subTreePath, Tree oldTree, Tree newTree) throws IOException {
+        Logger.log("Calculating diff for file: " + fullPath.toString() +
+                " in trees: " + oldTree.getId().getPath().toString() + " && " +
+                newTree.getId().getPath().toString() + "\n"
+        );
+
         List<Tree.TreeEntry> oldEntries = oldTree.getEntries();
         List<Tree.TreeEntry> newEntries = newTree.getEntries();
 
         if (oldEntries.size() == 0 &&
                 newEntries.size() == 0) {
+            Logger.log("Trees are empty\n");
             return new FileDiff(fullPath, null, null,
                     null, PathState.PERSERVED);
         }
@@ -93,13 +124,11 @@ public class DiffCalculator {
             pathState = pathsToNewEntries.containsKey(subtree) ? PathState.ADDED : PathState.DELETED;
         }
 
-
+        Logger.log("The state of the path is " + pathState + "\n");
         if (pathState != PathState.PERSERVED) {
             return new FileDiff(fullPath, null, null,
                     null, pathState);
         }
-        System.out.println(3);
-
 
         return switch (pathsToNewEntries.get(subtree).type()) {
             case BLOB -> FileDiffCalculator.calculate(

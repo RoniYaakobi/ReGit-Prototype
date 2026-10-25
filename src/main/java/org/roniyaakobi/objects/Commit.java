@@ -1,6 +1,7 @@
 package org.roniyaakobi.objects;
 
 import org.roniyaakobi.Constants;
+import org.roniyaakobi.utils.Logger;
 import org.roniyaakobi.utils.Timestamp;
 import org.roniyaakobi.utils.User;
 import org.roniyaakobi.utils.BytesFormatter;
@@ -67,15 +68,24 @@ public final class Commit extends RegitObject {
         this.timestamp = timestamp;
         this.message = message;
 
-        store();
+        Logger.log("Added commit: \n" + serialize() + "\n\n");
 
+        store();
     }
 
+    /**
+     * Build the bytes of the header for the commit
+     * @return The byte array of the header
+     */
     public byte[] buildHeaderBytes(){
         String header = "commit " + serialize().getBytes().length + "\0";
         return header.getBytes();
     }
 
+    /**
+     * Serialize the commit
+     * @return A string of the serialize commit
+     */
     private String serialize() {
         return "tree " +  HexFormat.of().formatHex(treeId.getBytes()) +
                 " parent " +
@@ -86,6 +96,12 @@ public final class Commit extends RegitObject {
                 message;
     }
 
+    /**
+     * Deserialize the byte array to a commit object
+     * @param serialized byte array
+     * @return a deserialized Commit object
+     * @throws IOException
+     */
     public static Commit deserialize(byte[] serialized) throws IOException {
         SerialziedCommitMetadata metadata = SerialziedCommitMetadata.buildMetadata(serialized);
 
@@ -148,10 +164,18 @@ public final class Commit extends RegitObject {
         }
     }
 
+    /**
+     * Get the parentId of the commit
+     * @return the parent's id
+     */
     public Optional<RegitObjects.ObjectId> getParentId(){
         return parentId;
     }
 
+    /**
+     * Get the treeId of the commit
+     * @return the objectId of the tree in the commit
+     */
     public RegitObjects.ObjectId getTreeId(){
         return treeId;
     }

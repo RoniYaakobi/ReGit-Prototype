@@ -7,9 +7,19 @@ import java.nio.file.Files;
 import java.util.zip.InflaterInputStream;
 
 public interface Compressable {
+    /**
+     * Compress the object
+     * @return The compressed object in bytes
+     */
     byte[] compress();
 
-     static RegitObject deserialize(RegitObjects.ObjectId id) throws IOException {
+    /**
+     * Deserialize an object from id to object
+     * @param id The id of the object
+     * @return The deserialized object
+     * @throws IOException
+     */
+    static RegitObject deserialize(RegitObjects.ObjectId id) throws IOException {
         try (InputStream file = Files.newInputStream(id.getPath());
              InflaterInputStream inflater = new InflaterInputStream(file);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
@@ -35,6 +45,12 @@ public interface Compressable {
         }
     }
 
+    /**
+     * Load bytes from the objectId
+     * @param objectId the object's id
+     * @return the bytes from the file
+     * @throws IOException
+     */
     static byte[] loadObjectId(RegitObjects.ObjectId objectId) throws IOException {
         try (InputStream file = Files.newInputStream(objectId.getPath());
              InflaterInputStream inflater = new InflaterInputStream(file);

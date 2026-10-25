@@ -1,5 +1,7 @@
 package org.roniyaakobi.objects;
 
+import org.roniyaakobi.utils.Logger;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -7,7 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TreeBuilder {
+    /**
+     * Build a tree from a directory
+     * @param directory The directory to build the tree from
+     * @return The built tree object
+     * @throws IOException
+     */
     public static Tree buildTree(Path directory) throws IOException {
+        Logger.log("Building tree: " + directory.toString());
         List<Tree.TreeEntry> treeEntries = new ArrayList<>();
 
         try (var paths = Files.walk(directory, 1)){
@@ -37,6 +46,8 @@ public class TreeBuilder {
                 }
             }
         }
+
+        Logger.log("Finished building tree: " + directory.toString());
 
         return new Tree(treeEntries);
     }

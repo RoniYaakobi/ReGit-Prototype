@@ -2,6 +2,7 @@ package org.roniyaakobi.objects;
 
 import org.roniyaakobi.Constants;
 import org.roniyaakobi.utils.BytesFormatter;
+import org.roniyaakobi.utils.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,6 +34,7 @@ public final class Blob extends RegitObject {
     private final long size;
 
     private Blob(Path path, long size) throws IOException {
+        Logger.log("Created blob object for: " + path.toString() + "\n");
         this.path = path;
         this.size = size;
 
@@ -42,18 +44,39 @@ public final class Blob extends RegitObject {
     }
 
 
+    /**
+     * Add a comment to the blob object
+     * @param comment The new comment
+     */
     public void addComment(Comment comment){
         comments.add(comment);
     }
 
+    /**
+     * Get the size of the blob file
+     * @return the size of the blob file
+     */
     public long getSize(){
         return size;
     }
 
+    /**
+     * Create a blob from a given path
+     * @param path The path of the blob source
+     * @return A blob object
+     * @throws IOException
+     */
     public static Blob fromPath(Path path) throws IOException {
         return new Blob(path, Files.size(path));
     }
 
+    /**
+     * Build a blob from bytes
+     * @param path The source directory of the blob
+     * @param header The header bytes
+     * @return A blob object
+     * @throws IOException
+     */
     public static Blob fromBytes(Path path, byte[] header) throws IOException {
         String headerString = BytesFormatter.bytesToString(header);
 
@@ -85,11 +108,19 @@ public final class Blob extends RegitObject {
         return blob;
     }
 
+    /**
+     * Build the header bytes
+     * @return the header bytes
+     */
     public byte[] buildHeaderBytes(){
         String header = "blob " + getComments() + getSize() + "\0";
         return header.getBytes();
     }
 
+    /**
+     * Stream 8kb sections into a consumer
+     * @param streamDataConsumer the consumer for the bytes of the file
+     */
     public void streamFileContents(Consumer<StreamData> streamDataConsumer){
         try (InputStream in = Files.newInputStream(path)) {
             byte[] buffer = new byte[8192];
@@ -103,6 +134,7 @@ public final class Blob extends RegitObject {
         }
     }
 
+    @Override
     public byte[] compress(){
         try (ByteArrayOutputStream output = new ByteArrayOutputStream();
              DeflaterOutputStream deflater =
@@ -129,7 +161,8 @@ public final class Blob extends RegitObject {
         }
     }
 
-    public  RegitObjects.ObjectId hash() {
+    @Override
+    public RegitObjects.ObjectId hash() {
         if (objectId != null){
             return objectId;
         }
@@ -152,6 +185,10 @@ public final class Blob extends RegitObject {
         }
     }
 
+    /**
+     * Format all the comments into a string
+     * @return The formatted comments for saving in the header
+     */
     public String getComments() {
         String commentsString = "";
 

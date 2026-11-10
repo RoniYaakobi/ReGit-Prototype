@@ -30,7 +30,7 @@ public class TreeBuilder {
                     treeEntries.add(
                             new Tree.TreeEntry(
                                     name,
-                                    subTree.getId(),
+                                    subTree.getObjectId(),
                                     RegitObjects.ObjectType.TREE
                             )
                     );
@@ -39,7 +39,7 @@ public class TreeBuilder {
                     treeEntries.add(
                             new Tree.TreeEntry(
                                     name,
-                                    file.getId(),
+                                    file.getObjectId(),
                                     RegitObjects.ObjectType.BLOB
                             )
                     );

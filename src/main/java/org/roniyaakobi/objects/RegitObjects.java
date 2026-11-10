@@ -5,7 +5,9 @@ import org.roniyaakobi.utils.BytesFormatter;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class RegitObjects {
@@ -56,9 +58,13 @@ public class RegitObjects {
         private final byte[] objectHash;
         private final ObjectType objectType;
 
+        private final String hex;
+
         public ObjectId(byte[] objectHash, ObjectType objectType){
             this.objectHash = objectHash;
             this.objectType = objectType;
+
+            this.hex = HexFormat.of().formatHex(objectHash);
         }
 
         /**
@@ -76,12 +82,22 @@ public class RegitObjects {
         }
 
         /**
+         * Create an objectId from a hash hex
+         * @param hex the hex of the objectID (object hash)
+         * @param objectType the type of object
+         * @return The ObjectId object
+         */
+        public static ObjectId fromHex(String hex, ObjectType objectType){
+            byte[] objectHash = BytesFormatter.hexToBytes(hex);
+
+            return new ObjectId(objectHash, objectType);
+        }
+
+        /**
          * Get the path of the object file
          * @return the path of the object file
          */
         public Path getPath(){
-            String hex = HexFormat.of().formatHex(objectHash);
-
             String prefix = hex.substring(0,2);
             Path folder = Constants.objectStorePath.resolve(prefix);
 
@@ -95,6 +111,24 @@ public class RegitObjects {
          */
         public byte[] getBytes(){
             return objectHash;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            ObjectId objectId = (ObjectId) o;
+
+            boolean x = Objects.deepEquals(objectHash, objectId.objectHash);
+            return x;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(objectHash);
+        }
+
+        public String getHex(){
+            return hex;
         }
     }
 }

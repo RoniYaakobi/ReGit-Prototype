@@ -2,6 +2,7 @@ package org.roniyaakobi.objects;
 
 import org.roniyaakobi.Constants;
 import org.roniyaakobi.utils.BytesFormatter;
+import org.roniyaakobi.utils.FileUtil;
 import org.roniyaakobi.utils.Logger;
 
 import java.io.ByteArrayOutputStream;
@@ -15,7 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.zip.DataFormatException;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
 
 public final class Blob extends RegitObject {
     public record StreamData(byte[] bytes, int length) {}
@@ -206,5 +209,48 @@ public final class Blob extends RegitObject {
         }
 
         return commentsString;
+    }
+
+    public static void load(Path target, RegitObjects.ObjectId id) throws IOException {
+        try {
+            byte[] bytes = getBytes(id);
+
+            byte[][] headerAndBody = BytesFormatter.splitAtOffset(bytes, BytesFormatter.getBytesToNulTerminator(bytes));
+
+            byte[] header = headerAndBody[0], body = headerAndBody[1];
+
+            String headerString = header.toString();
+
+            if (headerString.startsWith("blob")){
+                return;
+            }
+
+            FileUtil.writeFile(target, body);
+
+        } catch (DataFormatException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static byte[] getBytes(RegitObjects.ObjectId id) throws IOException, DataFormatException {
+        byte[] serialized = Archivable.loadBytes(id);
+
+        // Instantiate the Inflater
+        Inflater inflater = new Inflater();
+        inflater.setInput(serialized);
+
+        // Decompress using a dynamic output stream
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(serialized.length);
+        byte[] buffer = new byte[1024];
+
+        while (!inflater.finished()) {
+            int count = inflater.inflate(buffer);
+            outputStream.write(buffer, 0, count);
+        }
+
+        // Clean up resources
+        inflater.end();
+
+        return outputStream.toByteArray();
     }
 }

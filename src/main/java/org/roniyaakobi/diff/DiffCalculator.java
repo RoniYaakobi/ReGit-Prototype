@@ -29,7 +29,7 @@ public class DiffCalculator {
 
     public DiffCalculator(Commit oldCommit, Commit newCommit) throws IOException {
         Logger.log("Building diff calculator between two commits: " +
-                oldCommit.getId().getPath() + " && " + newCommit.getId().getPath());
+                oldCommit.getObjectId().getPath() + " && " + newCommit.getObjectId().getPath());
 
 
         this.oldCommit = oldCommit;
@@ -38,14 +38,14 @@ public class DiffCalculator {
 
     public DiffCalculator(Commit commit) throws IOException {
         Logger.log("Building diff calculator between two commits: " +
-                commit.getId().getPath() + " && its parent");
+                commit.getObjectId().getPath() + " && its parent");
 
         this.newCommit = commit;
 
         Optional<RegitObjects.ObjectId> parent = commit.getParentId();
 
         if (parent.isPresent()){
-            this.oldCommit = (Commit)Compressable.deserialize(parent.get());
+            this.oldCommit = (Commit) Archivable.unarchive(parent.get());
         } else {
             throw new IllegalArgumentException("Commit had no parent to Diff to.");
         }
@@ -63,8 +63,8 @@ public class DiffCalculator {
         RegitObjects.ObjectId oldTreeId = oldCommit.getTreeId();
         RegitObjects.ObjectId newTreeId = newCommit.getTreeId();
 
-        Tree oldTree = (Tree)Compressable.deserialize(oldTreeId);
-        Tree newTree = (Tree)Compressable.deserialize(newTreeId);
+        Tree oldTree = (Tree) Archivable.unarchive(oldTreeId);
+        Tree newTree = (Tree) Archivable.unarchive(newTreeId);
 
         return ofTrees(file, file, oldTree, newTree);
 
@@ -82,8 +82,8 @@ public class DiffCalculator {
      */
     public static FileDiff ofTrees(Path fullPath, Path subTreePath, Tree oldTree, Tree newTree) throws IOException {
         Logger.log("Calculating diff for file: " + fullPath.toString() +
-                " in trees: " + oldTree.getId().getPath().toString() + " && " +
-                newTree.getId().getPath().toString() + "\n"
+                " in trees: " + oldTree.getObjectId().getPath().toString() + " && " +
+                newTree.getObjectId().getPath().toString() + "\n"
         );
 
         List<Tree.TreeEntry> oldEntries = oldTree.getEntries();
@@ -133,17 +133,17 @@ public class DiffCalculator {
         return switch (pathsToNewEntries.get(subtree).type()) {
             case BLOB -> FileDiffCalculator.calculate(
 
-                    Compressable.loadObjectId(pathsToOldEntries.get(subtree).objectId()),
+                    Archivable.loadBytes(pathsToOldEntries.get(subtree).objectId()),
 
-                    Compressable.loadObjectId(pathsToNewEntries.get(subtree).objectId()),
+                    Archivable.loadBytes(pathsToNewEntries.get(subtree).objectId()),
 
                     pathState,
 
                     fullPath);
 
             case TREE -> {
-                Tree oldSubTree = (Tree) Compressable.deserialize(pathsToOldEntries.get(subtree).objectId());
-                Tree newSubTree = (Tree) Compressable.deserialize(pathsToNewEntries.get(subtree).objectId());
+                Tree oldSubTree = (Tree) Archivable.unarchive(pathsToOldEntries.get(subtree).objectId());
+                Tree newSubTree = (Tree) Archivable.unarchive(pathsToNewEntries.get(subtree).objectId());
 
                 int length = subTreePath.getNameCount();
 

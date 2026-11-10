@@ -1,10 +1,8 @@
 package org.roniyaakobi.objects;
 
-import org.roniyaakobi.utils.FileWritingUtil;
-
 import java.io.IOException;
 
-public abstract class RegitObject implements Compressable, Hashable {
+public abstract class RegitObject implements Hashable, Archivable {
 
     private RegitObjects.ObjectId objectId = null;
 
@@ -12,7 +10,8 @@ public abstract class RegitObject implements Compressable, Hashable {
      * Get the id of the object
      * @return The objectID
      */
-    public RegitObjects.ObjectId getId(){
+    @Override
+    public RegitObjects.ObjectId getObjectId(){
         if (objectId == null){
             objectId = hash();
         }
@@ -25,6 +24,7 @@ public abstract class RegitObject implements Compressable, Hashable {
      * @throws IOException
      */
     public void store() throws IOException {
-        FileWritingUtil.writeFile(getId().getPath(), compress());
+        archive();
     }
+
 }

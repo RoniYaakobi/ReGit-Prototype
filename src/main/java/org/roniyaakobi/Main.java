@@ -19,20 +19,33 @@ public class Main {
     private static User user;
 
     public static void main(String[] args) throws IOException {
+        Path file = Path.of(
+                "C:\\Users\\roniy\\software_engeeniering\\12th\\ReGit_POC\\ReGit-Prototype\\playground\\src\\first"
+        );
 
-        user = login();
+//        Blob blob = Blob.fromPath(
+//                file
+//        );
+//
+//        Archivable.storeMap();
 
-        System.out.println("Enter the command you want to use: ");
+        Blob.load(file, RegitObjects.ObjectId.fromHex("16537ebd644f03eff5dfd3d057973f425a986b06", null));
 
-        String command = reader.nextLine().strip();
-
-        if (command.equals("commit")) {
-            commit();
-        } else if (command.equals("diff")){
-            diff();
-        } else {
-            System.out.println("Invalid command!");
-        }
+//        user = login();
+//
+//        System.out.println("Enter the command you want to use: ");
+//
+//        String command = reader.nextLine().strip();
+//
+//        if (command.equals("commit")) {
+//            commit();
+//        } else if (command.equals("diff")){
+//            diff();
+//        } else if (command.equals("exit")){
+//          exitRegit();
+//        } else {
+//            System.out.println("Invalid command!");
+//        }
     }
 
     /**
@@ -63,7 +76,7 @@ public class Main {
         Tree tree = TreeBuilder.buildTree(Path.of(path));
 
         Commit commit = new Commit(
-                tree.getId(),
+                tree.getObjectId(),
                 Optional.empty(),
                 user,
                 Timestamp.now(),
@@ -96,8 +109,8 @@ public class Main {
         );
 
         DiffCalculator calculator = new DiffCalculator(
-                (Commit) Compressable.deserialize(oldId),
-                (Commit) Compressable.deserialize(newId)
+                (Commit) Archivable.unarchive(oldId),
+                (Commit) Archivable.unarchive(newId)
         );
 
         DiffCalculator.FileDiff diff = calculator.calculate(Path.of(filePath));
@@ -141,5 +154,9 @@ public class Main {
             }
         });
 
+    }
+
+    private static void exitRegit(){
+        Archivable.storeMap();
     }
 }

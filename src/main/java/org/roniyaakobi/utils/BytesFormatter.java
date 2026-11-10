@@ -102,4 +102,5 @@ public class BytesFormatter {
     public static String byteToAscii(byte b){
         return bytesToString(new byte[] {b});
     }
+
 }

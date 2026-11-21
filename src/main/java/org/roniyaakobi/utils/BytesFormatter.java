@@ -46,6 +46,7 @@ public class BytesFormatter {
      * @return the new byte array
      */
     public static byte[] hexToBytes(String hex){
+
         byte[] bytes = new byte[hex.length() / 2];
 
         for (int i = 0; i < hex.length(); i += 2){
@@ -102,4 +103,5 @@ public class BytesFormatter {
     public static String byteToAscii(byte b){
         return bytesToString(new byte[] {b});
     }
+
 }

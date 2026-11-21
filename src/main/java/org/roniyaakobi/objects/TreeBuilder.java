@@ -30,8 +30,9 @@ public class TreeBuilder {
                     treeEntries.add(
                             new Tree.TreeEntry(
                                     name,
-                                    subTree.getId(),
-                                    RegitObjects.ObjectType.TREE
+                                    subTree.getObjectId(),
+                                    RegitObjects.ObjectType.TREE,
+                                    List.of()
                             )
                     );
                 } else {
@@ -39,8 +40,9 @@ public class TreeBuilder {
                     treeEntries.add(
                             new Tree.TreeEntry(
                                     name,
-                                    file.getId(),
-                                    RegitObjects.ObjectType.BLOB
+                                    file.getObjectId(),
+                                    RegitObjects.ObjectType.BLOB,
+                                    List.of()
                             )
                     );
                 }

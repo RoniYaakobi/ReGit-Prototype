@@ -1,5 +1,6 @@
 package org.roniyaakobi;
 
+import org.roniyaakobi.branches.Branch;
 import org.roniyaakobi.diff.DiffCalculator;
 import org.roniyaakobi.objects.*;
 import org.roniyaakobi.utils.BytesFormatter;
@@ -16,23 +17,51 @@ import java.util.Scanner;
 public class Main {
     private static final Scanner reader = new Scanner(System.in);
 
-    private static User user;
+    private static User user = new User("Emily", "Tsunderella");
 
     public static void main(String[] args) throws IOException {
+        Path path = Path.of(
+                "C:\\Users\\roniy\\software_engeeniering\\12th\\ReGit_POC\\ReGit-Prototype\\playground\\src"
+        );
 
-        user = login();
+//        Blob blob = Blob.fromPath(
+//                file
+//        );
+//
+        Tree tree = TreeBuilder.buildTree(path);
 
-        System.out.println("Enter the command you want to use: ");
+        Commit commit = new Commit(
+                tree.getObjectId(),
+                Optional.empty(),
+                user,
+                Timestamp.now(),
+                "tung tung tung sahur"
+        );
 
-        String command = reader.nextLine().strip();
+//        Branch main = new Branch("main", commit.getObjectId());
+//
+//        Branch.saveHead(main);
 
-        if (command.equals("commit")) {
-            commit();
-        } else if (command.equals("diff")){
-            diff();
-        } else {
-            System.out.println("Invalid command!");
-        }
+//        Branch main = Branch.loadMain();
+//
+//        main.loadCurrentCommit(path);
+
+        Archivable.storeMap();
+        //        user = login();
+//
+//        System.out.println("Enter the command you want to use: ");
+//
+//        String command = reader.nextLine().strip();
+//
+//        if (command.equals("commit")) {
+//            commit();
+//        } else if (command.equals("diff")){
+//            diff();
+//        } else if (command.equals("exit")){
+//          exitRegit();
+//        } else {
+//            System.out.println("Invalid command!");
+//        }
     }
 
     /**
@@ -63,7 +92,7 @@ public class Main {
         Tree tree = TreeBuilder.buildTree(Path.of(path));
 
         Commit commit = new Commit(
-                tree.getId(),
+                tree.getObjectId(),
                 Optional.empty(),
                 user,
                 Timestamp.now(),
@@ -96,8 +125,8 @@ public class Main {
         );
 
         DiffCalculator calculator = new DiffCalculator(
-                (Commit) Compressable.deserialize(oldId),
-                (Commit) Compressable.deserialize(newId)
+                (Commit) Archivable.unarchive(oldId),
+                (Commit) Archivable.unarchive(newId)
         );
 
         DiffCalculator.FileDiff diff = calculator.calculate(Path.of(filePath));
@@ -141,5 +170,9 @@ public class Main {
             }
         });
 
+    }
+
+    private static void exitRegit(){
+        Archivable.storeMap();
     }
 }

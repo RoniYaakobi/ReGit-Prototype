@@ -99,7 +99,7 @@ public class RegitObjects {
          */
         public Path getPath(){
             String prefix = hex.substring(0,2);
-            Path folder = Constants.objectStorePath.resolve(prefix);
+            Path folder = Constants.OBJECT_STORE_PATH.resolve(prefix);
 
             String suffix = hex.substring(2);
             return folder.resolve(suffix + "." + objectType.name().toLowerCase());

@@ -1,5 +1,6 @@
 package org.roniyaakobi;
 
+import org.roniyaakobi.branches.Branch;
 import org.roniyaakobi.diff.DiffCalculator;
 import org.roniyaakobi.objects.*;
 import org.roniyaakobi.utils.BytesFormatter;
@@ -16,22 +17,37 @@ import java.util.Scanner;
 public class Main {
     private static final Scanner reader = new Scanner(System.in);
 
-    private static User user;
+    private static User user = new User("Emily", "Tsunderella");
 
     public static void main(String[] args) throws IOException {
-        Path file = Path.of(
-                "C:\\Users\\roniy\\software_engeeniering\\12th\\ReGit_POC\\ReGit-Prototype\\playground\\src\\first"
+        Path path = Path.of(
+                "C:\\Users\\roniy\\software_engeeniering\\12th\\ReGit_POC\\ReGit-Prototype\\playground\\src"
         );
 
 //        Blob blob = Blob.fromPath(
 //                file
 //        );
 //
-//        Archivable.storeMap();
+        Tree tree = TreeBuilder.buildTree(path);
 
-        Blob.load(file, RegitObjects.ObjectId.fromHex("16537ebd644f03eff5dfd3d057973f425a986b06", null));
+        Commit commit = new Commit(
+                tree.getObjectId(),
+                Optional.empty(),
+                user,
+                Timestamp.now(),
+                "tung tung tung sahur"
+        );
 
-//        user = login();
+//        Branch main = new Branch("main", commit.getObjectId());
+//
+//        Branch.saveHead(main);
+
+//        Branch main = Branch.loadMain();
+//
+//        main.loadCurrentCommit(path);
+
+        Archivable.storeMap();
+        //        user = login();
 //
 //        System.out.println("Enter the command you want to use: ");
 //

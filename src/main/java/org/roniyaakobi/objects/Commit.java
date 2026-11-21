@@ -9,8 +9,7 @@ import org.roniyaakobi.utils.BytesFormatter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.nio.file.Path;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.zip.DeflaterOutputStream;
@@ -74,15 +73,6 @@ public final class Commit extends RegitObject {
     }
 
     /**
-     * Build the bytes of the header for the commit
-     * @return The byte array of the header
-     */
-    public byte[] buildHeaderBytes(){
-        String header = "commit " + serialize().getBytes().length + "\0";
-        return header.getBytes();
-    }
-
-    /**
      * Serialize the commit
      * @return A string of the serialize commit
      */
@@ -128,15 +118,12 @@ public final class Commit extends RegitObject {
     }
 
     @Override
-    public byte[] compress() {
+    public byte[] compressBody() {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream();
              DeflaterOutputStream deflater =
                      new DeflaterOutputStream(output)) {
 
-
-            deflater.write(buildHeaderBytes());
-
-            deflater.write(serialize().getBytes(), 0 , serialize().getBytes().length);
+            deflater.write(serialize().getBytes());
 
             deflater.finish();
 
@@ -147,21 +134,8 @@ public final class Commit extends RegitObject {
     }
 
     @Override
-    public RegitObjects.ObjectId hash() {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
-
-            byte[] headerBytes = buildHeaderBytes();
-
-            digest.update(headerBytes);
-
-            digest.update(serialize().getBytes());
-
-            return new RegitObjects.ObjectId(digest.digest(), RegitObjects.ObjectType.COMMIT);
-
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-1 is not available", e);
-        }
+    public RegitObjects.ObjectType getType() {
+        return RegitObjects.ObjectType.COMMIT;
     }
 
     /**
@@ -178,5 +152,13 @@ public final class Commit extends RegitObject {
      */
     public RegitObjects.ObjectId getTreeId(){
         return treeId;
+    }
+
+    public void load(Path path) throws IOException {
+        System.out.println("First time");
+        Tree tree = (Tree) Archivable.unarchive(treeId);
+        System.out.println("second time");
+        tree.loadTree(path);
+        System.out.println("third");
     }
 }

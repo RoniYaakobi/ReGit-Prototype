@@ -1,16 +1,11 @@
 package org.roniyaakobi.objects;
 
-import org.roniyaakobi.utils.BytesFormatter;
 import org.roniyaakobi.utils.FileUtil;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -24,7 +19,13 @@ public interface Archivable extends Compressible {
 
     public static final Map<RegitObjects.ObjectId, Long> OBJECT_MAP = getObjectMap();
 
-    public static final byte DELIMETER_BYTE = 3;
+    /**
+     * A stored object record: its type and its compressed body
+     * @param type the object type from the record header
+     * @param compressed the compressed body
+     */
+    record ArchiveRecord(RegitObjects.ObjectType type, byte[] compressed) {}
+
     static Map<RegitObjects.ObjectId, Long> getObjectMap() {
         Map<RegitObjects.ObjectId, Long> objectMap = new HashMap<>();
 
@@ -52,35 +53,68 @@ public interface Archivable extends Compressible {
         return objectMap;
     }
 
+    /**
+     * Append the object to the archive as "&lt;type&gt; &lt;compressedLength&gt;\0&lt;compressedBody&gt;"
+     * @throws IOException
+     */
     default void archive() throws IOException {
 
         if (OBJECT_MAP.containsKey(getObjectId())){
             return;
         }
 
-        byte[] compressed = compress();
+        byte[] record = compress();
 
         FileUtil.createFileIfNotExists(ARCHIVE_PATH);
 
-        RandomAccessFile file = new RandomAccessFile(ARCHIVE_PATH.toString(), "rw");
-        Long offset = file.length();
+        try (RandomAccessFile file = new RandomAccessFile(ARCHIVE_PATH.toString(), "rw")) {
+            long offset = file.length();
 
-        file.seek(file.length());
+            file.seek(offset);
+            file.write(record, 0, record.length);
 
-
-        file.write(compressed, 0, compressed.length);
-        file.writeByte(DELIMETER_BYTE);
-        OBJECT_MAP.put(getObjectId(), offset);
+            OBJECT_MAP.put(getObjectId(), offset);
+        }
     }
 
     static RegitObject unarchive(RegitObjects.ObjectId objectId) throws IOException {
-        return Compressible.parseBytes(loadBytes(objectId));
+        ArchiveRecord record = loadRecord(objectId);
+
+        return Compressible.parse(record.type(), Compressible.inflate(record.compressed()));
     }
 
-    static byte[] loadBytes(RegitObjects.ObjectId objectId) throws IOException {
-        long objectOffset = OBJECT_MAP.get(objectId);
+    /**
+     * Read the record of an object from the archive
+     * @param objectId the id of the object
+     * @return the type and compressed body of the object
+     * @throws IOException
+     */
+    static ArchiveRecord loadRecord(RegitObjects.ObjectId objectId) throws IOException {
+        Long objectOffset = OBJECT_MAP.get(objectId);
 
-        return  FileUtil.readBytesUntilDelimiter(ARCHIVE_PATH.toFile(), objectOffset, DELIMETER_BYTE);
+        if (objectOffset == null){
+            throw new IllegalArgumentException("Object " + objectId.getHex() + " is not in the archive");
+        }
+
+        FileUtil.LengthPrefixedRecord record =
+                FileUtil.readLengthPrefixedRecord(ARCHIVE_PATH.toFile(), objectOffset);
+
+        String typeName = record.header().split(" ")[0];
+
+        return new ArchiveRecord(
+                RegitObjects.ObjectType.valueOf(typeName.toUpperCase()),
+                record.body()
+        );
+    }
+
+    /**
+     * Load the inflated body of an object from the archive
+     * @param objectId the id of the object
+     * @return the inflated body
+     * @throws IOException
+     */
+    static byte[] loadBytes(RegitObjects.ObjectId objectId) throws IOException {
+        return Compressible.inflate(loadRecord(objectId).compressed());
     }
 
     RegitObjects.ObjectId getObjectId();
@@ -102,4 +136,3 @@ public interface Archivable extends Compressible {
         }
     }
 }
-

@@ -31,7 +31,8 @@ public class TreeBuilder {
                             new Tree.TreeEntry(
                                     name,
                                     subTree.getObjectId(),
-                                    RegitObjects.ObjectType.TREE
+                                    RegitObjects.ObjectType.TREE,
+                                    List.of()
                             )
                     );
                 } else {
@@ -40,7 +41,8 @@ public class TreeBuilder {
                             new Tree.TreeEntry(
                                     name,
                                     file.getObjectId(),
-                                    RegitObjects.ObjectType.BLOB
+                                    RegitObjects.ObjectType.BLOB,
+                                    List.of()
                             )
                     );
                 }

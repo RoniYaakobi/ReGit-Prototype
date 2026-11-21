@@ -1,5 +1,6 @@
 package org.roniyaakobi;
 
+import org.roniyaakobi.branches.Branch;
 import org.roniyaakobi.diff.DiffCalculator;
 import org.roniyaakobi.objects.*;
 import org.roniyaakobi.utils.BytesFormatter;
@@ -8,61 +9,127 @@ import org.roniyaakobi.utils.User;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
+    private static final Scanner reader = new Scanner(System.in);
+
+    private static User user = new User("Emily", "Tsunderella");
+
     public static void main(String[] args) throws IOException {
-        if (args.length < 1){
-            throw new RuntimeException("Regit needs a file!");
-        }
-
-        Blob blob = Blob.fromPath(Path.of(args[0]));
-
-        blob.addComment(new Blob.Comment("Welcome to the land of rigut!", 0, 1));
-
-        blob.store();
-
-        Tree tree = new Tree(
-                List.of(new Tree.TreeEntry("blob", blob.getId(),
-                        RegitObjects.ObjectType.BLOB))
+        Path path = Path.of(
+                "C:\\Users\\roniy\\software_engeeniering\\12th\\ReGit_POC\\ReGit-Prototype\\playground\\src"
         );
 
-        tree.store();
+//        Blob blob = Blob.fromPath(
+//                file
+//        );
+//
+        Tree tree = TreeBuilder.buildTree(path);
 
         Commit commit = new Commit(
-                tree.getId(),
+                tree.getObjectId(),
                 Optional.empty(),
-                new User("Roni", "RoniYaakobi@gmail.com"),
+                user,
                 Timestamp.now(),
-                "Heh funny"
+                "tung tung tung sahur"
         );
 
-//        commit.store();
+//        Branch main = new Branch("main", commit.getObjectId());
+//
+//        Branch.saveHead(main);
 
-        System.out.println(commit.getId().getPath());
+//        Branch main = Branch.loadMain();
+//
+//        main.loadCurrentCommit(path);
 
+        Archivable.storeMap();
+        //        user = login();
+//
+//        System.out.println("Enter the command you want to use: ");
+//
+//        String command = reader.nextLine().strip();
+//
+//        if (command.equals("commit")) {
+//            commit();
+//        } else if (command.equals("diff")){
+//            diff();
+//        } else if (command.equals("exit")){
+//          exitRegit();
+//        } else {
+//            System.out.println("Invalid command!");
+//        }
+    }
 
+    /**
+     * Get the user data from the user
+     * @return A User object based on what the user entered
+     */
+    private static User login(){
+        System.out.println("Enter your username: ");
+        String username = reader.nextLine();
+
+        System.out.println("Enter your email: ");
+        String email = reader.nextLine();
+
+        return new User(username, email);
+    }
+
+    /**
+     * Make a commit
+     * @throws IOException
+     */
+    private static void commit() throws IOException {
+        System.out.println("Enter the path for the tree: ");
+        String path = reader.nextLine().strip();
+
+        System.out.println("Enter the message for the commit: ");
+        String message = reader.nextLine().strip();
+
+        Tree tree = TreeBuilder.buildTree(Path.of(path));
+
+        Commit commit = new Commit(
+                tree.getObjectId(),
+                Optional.empty(),
+                user,
+                Timestamp.now(),
+                message
+        );
+    }
+
+    /**
+     * Calculate a diff between two commits and files in the commits
+     * @throws IOException
+     */
+    private static void diff() throws IOException {
+        System.out.println("Enter the commit hash for the old commit: ");
+        String oldHash = reader.nextLine();
+
+        System.out.println("Enter the commit hash for the new commit: ");
+        String newHash = reader.nextLine();
+
+        System.out.println("Enter the path to the file to apply diff: ");
+        String filePath = reader.nextLine();
 
         RegitObjects.ObjectId oldId = RegitObjects.ObjectId.fromPath(
-                Path.of("fd/d1e9643f83078db41fcb614ed42b90e39d30d1"),
+                Path.of(oldHash.substring(0,2), oldHash.substring(2)),
                 RegitObjects.ObjectType.COMMIT
         );
 
         RegitObjects.ObjectId newId = RegitObjects.ObjectId.fromPath(
-                Path.of("25/5e2abe11a30cef408040cd08c830344121e13b"),
+                Path.of(newHash.substring(0,2), newHash.substring(2)),
                 RegitObjects.ObjectType.COMMIT
         );
 
         DiffCalculator calculator = new DiffCalculator(
-                (Commit) Compressable.deserialize(oldId),
-                (Commit) Compressable.deserialize(newId)
+                (Commit) Archivable.unarchive(oldId),
+                (Commit) Archivable.unarchive(newId)
         );
-        ;
 
-        DiffCalculator.FileDiff diff = calculator.calculate(Path.of("blob"));
+        DiffCalculator.FileDiff diff = calculator.calculate(Path.of(filePath));
 
         String LCSString = BytesFormatter.bytesToString(diff.LCS());
 
@@ -103,6 +170,9 @@ public class Main {
             }
         });
 
+    }
 
+    private static void exitRegit(){
+        Archivable.storeMap();
     }
 }

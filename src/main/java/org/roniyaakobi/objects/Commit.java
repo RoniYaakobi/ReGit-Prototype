@@ -1,6 +1,7 @@
 package org.roniyaakobi.objects;
 
 import org.roniyaakobi.Constants;
+import org.roniyaakobi.utils.Logger;
 import org.roniyaakobi.utils.Timestamp;
 import org.roniyaakobi.utils.User;
 import org.roniyaakobi.utils.BytesFormatter;
@@ -8,8 +9,7 @@ import org.roniyaakobi.utils.BytesFormatter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.nio.file.Path;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.zip.DeflaterOutputStream;
@@ -60,20 +60,22 @@ public final class Commit extends RegitObject {
         User author,
         Timestamp timestamp,
         String message
-    ) {
+    ) throws IOException {
         this.treeId = treeId;
         this.parentId = parentId;
         this.author = author;
         this.timestamp = timestamp;
         this.message = message;
 
+        Logger.log("Added commit: \n" + serialize() + "\n\n");
+
+        store();
     }
 
-    public byte[] buildHeaderBytes(){
-        String header = "commit " + serialize().getBytes().length + "\0";
-        return header.getBytes();
-    }
-
+    /**
+     * Serialize the commit
+     * @return A string of the serialize commit
+     */
     private String serialize() {
         return "tree " +  HexFormat.of().formatHex(treeId.getBytes()) +
                 " parent " +
@@ -84,7 +86,13 @@ public final class Commit extends RegitObject {
                 message;
     }
 
-    public static Commit deserialize(byte[] serialized){
+    /**
+     * Deserialize the byte array to a commit object
+     * @param serialized byte array
+     * @return a deserialized Commit object
+     * @throws IOException
+     */
+    public static Commit deserialize(byte[] serialized) throws IOException {
         SerialziedCommitMetadata metadata = SerialziedCommitMetadata.buildMetadata(serialized);
 
         RegitObjects.ObjectId treeId = new RegitObjects.ObjectId(
@@ -110,15 +118,12 @@ public final class Commit extends RegitObject {
     }
 
     @Override
-    public byte[] compress() {
+    public byte[] compressBody() {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream();
              DeflaterOutputStream deflater =
                      new DeflaterOutputStream(output)) {
 
-
-            deflater.write(buildHeaderBytes());
-
-            deflater.write(serialize().getBytes(), 0 , serialize().getBytes().length);
+            deflater.write(serialize().getBytes());
 
             deflater.finish();
 
@@ -129,28 +134,31 @@ public final class Commit extends RegitObject {
     }
 
     @Override
-    public RegitObjects.ObjectId hash() {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
-
-            byte[] headerBytes = buildHeaderBytes();
-
-            digest.update(headerBytes);
-
-            digest.update(serialize().getBytes());
-
-            return new RegitObjects.ObjectId(digest.digest(), RegitObjects.ObjectType.COMMIT);
-
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-1 is not available", e);
-        }
+    public RegitObjects.ObjectType getType() {
+        return RegitObjects.ObjectType.COMMIT;
     }
 
+    /**
+     * Get the parentId of the commit
+     * @return the parent's id
+     */
     public Optional<RegitObjects.ObjectId> getParentId(){
         return parentId;
     }
 
+    /**
+     * Get the treeId of the commit
+     * @return the objectId of the tree in the commit
+     */
     public RegitObjects.ObjectId getTreeId(){
         return treeId;
+    }
+
+    public void load(Path path) throws IOException {
+        System.out.println("First time");
+        Tree tree = (Tree) Archivable.unarchive(treeId);
+        System.out.println("second time");
+        tree.loadTree(path);
+        System.out.println("third");
     }
 }

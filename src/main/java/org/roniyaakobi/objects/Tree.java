@@ -10,26 +10,31 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.DeflaterOutputStream;
 
 public final class Tree extends RegitObject {
-    /**
-     * Separates an entry's object id from its blob comments
-     */
-    public static final String commentsSeparator = "\u001D";
-
-    private final List<TreeEntry> entries;
+    private final Map<String, TreeEntry> entries;
     public Tree(List<TreeEntry> entries) throws IOException {
-        this.entries = entries.stream().sorted(Tree::isBigger).toList();
+        this.entries = entries.stream()
+                .collect(Collectors.toMap(
+                        TreeEntry::name,
+                        Function.identity()
+                ));;
         Logger.log("Tree: ");
-        entries.forEach(entry ->
+
+
+        getEntryIterable().forEach(entry ->
                 {
                     try {
                         Logger.log(
                                 "Name: " + entry.name() + "\n" +
-                                "ObjectId: " + entry.objectId().getPath() + "\n" +
-                                "Type: " + entry.type().name()
+                                        "ObjectId: " + entry.objectId().getPath() + "\n" +
+                                        "Type: " + entry.type().name()
                         );
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -41,24 +46,21 @@ public final class Tree extends RegitObject {
         store();
     }
 
+    private Stream<TreeEntry> getEntryIterable(){
+        return entries.values().stream().sorted(Tree::isBigger);
+    }
+
     /**
      * An entry in a tree
      * @param name the file or directory name
      * @param objectId the id of the object the entry points to
      * @param type the type of the object
-     * @param comments comments on the blob, always empty for non blob entries
      */
     public record TreeEntry(
             String name,
             RegitObjects.ObjectId objectId,
-            RegitObjects.ObjectType type,
-            List<Blob.Comment> comments
-    ) {
-        public TreeEntry {
-            comments = type == RegitObjects.ObjectType.BLOB && comments != null ?
-                    List.copyOf(comments) : List.of();
-        }
-    }
+            RegitObjects.ObjectType type
+    ) {}
 
     /**
      * Determine which of the two entries come first
@@ -79,66 +81,19 @@ public final class Tree extends RegitObject {
      * @param treeEntryConsumer the entry consumer
      */
     public void applyForEachEntry(Consumer<TreeEntry> treeEntryConsumer){
-        for (TreeEntry entry : entries){
+        for (TreeEntry entry : getEntryIterable().toList()){
             treeEntryConsumer.accept(entry);
         }
     }
 
     /**
-     * Turn an entry to string formatted for saving:
-     * "TYPE name\0hex" followed by "\u001D" and the encoded comments for blob entries that have comments
+     * Turn an entry to string formatted for saving: "TYPE name\0hex\n"
      * @param entry the TreeEntry to format
      * @return the String of the formatted tree entry
      */
     public static String formatEntry(TreeEntry entry){
-        String formatted = entry.type().name() + " " + entry.name() + "\0" +
-                HexFormat.of().formatHex(entry.objectId().getBytes());
-
-        if (!entry.comments().isEmpty()){
-            formatted += commentsSeparator + formatComments(entry.comments());
-        }
-
-        return formatted + "\n";
-    }
-
-    /**
-     * Encode blob comments as "start\u001Fend\u001Fcomment" joined by "\u001E"
-     * @param comments the comments
-     * @return the encoded comments
-     */
-    private static String formatComments(List<Blob.Comment> comments){
-        List<String> formatted = new ArrayList<>();
-
-        for (Blob.Comment comment : comments){
-            formatted.add(
-                    comment.startLine() + Blob.Comment.commentFieldDelimeter +
-                    comment.endLine() + Blob.Comment.commentFieldDelimeter +
-                    comment.comment()
-            );
-        }
-
-        return String.join(Blob.Comment.commentDelimeter, formatted);
-    }
-
-    /**
-     * Decode comments encoded by formatComments
-     * @param serialized the encoded comments
-     * @return the comments
-     */
-    private static List<Blob.Comment> parseComments(String serialized){
-        List<Blob.Comment> comments = new ArrayList<>();
-
-        for (String comment : serialized.split(Blob.Comment.commentDelimeter)){
-            String[] fields = comment.split(Blob.Comment.commentFieldDelimeter, 3);
-
-            comments.add(new Blob.Comment(
-                    fields[2],
-                    Integer.parseInt(fields[0]),
-                    Integer.parseInt(fields[1])
-            ));
-        }
-
-        return comments;
+        return entry.type().name() + " " + entry.name() + "\0" +
+                HexFormat.of().formatHex(entry.objectId().getBytes()) + "\n";
     }
 
     @Override
@@ -191,7 +146,7 @@ public final class Tree extends RegitObject {
             int nulIndex = entry.indexOf('\0');
 
             String metaData = entry.substring(0, nulIndex);
-            String idAndComments = entry.substring(nulIndex + 1);
+            String hex = entry.substring(nulIndex + 1);
 
             String[] fields = metaData.split(" ", 2);
 
@@ -199,17 +154,12 @@ public final class Tree extends RegitObject {
 
             String name = fields[1];
 
-            String[] idAndCommentsFields = idAndComments.split(commentsSeparator, 2);
-
             RegitObjects.ObjectId entryId = new RegitObjects.ObjectId(
-                    BytesFormatter.hexToBytes(idAndCommentsFields[0]),
+                    BytesFormatter.hexToBytes(hex),
                     type
             );
 
-            List<Blob.Comment> comments = idAndCommentsFields.length > 1 ?
-                    parseComments(idAndCommentsFields[1]) : List.of();
-
-            treeEntryList.add(new TreeEntry(name, entryId, type, comments));
+            treeEntryList.add(new TreeEntry(name, entryId, type));
         }
 
         return new Tree(treeEntryList);
@@ -219,7 +169,7 @@ public final class Tree extends RegitObject {
      * Get the tree entries
      * @return the entries
      */
-    public List<TreeEntry> getEntries(){
+    public Map<String, TreeEntry> getEntries(){
         return entries;
     }
 

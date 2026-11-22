@@ -1,67 +1,72 @@
 package org.roniyaakobi;
 
 import org.roniyaakobi.branches.Branch;
+import org.roniyaakobi.comments.Comment;
+import org.roniyaakobi.comments.CommentLoader;
 import org.roniyaakobi.diff.DiffCalculator;
 import org.roniyaakobi.objects.*;
 import org.roniyaakobi.utils.BytesFormatter;
-import org.roniyaakobi.utils.Timestamp;
 import org.roniyaakobi.utils.User;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Scanner;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     private static final Scanner reader = new Scanner(System.in);
 
-    private static User user = new User("Emily", "Tsunderella");
+    private static final String RESET = "\033[0m";
+    private static final String RED = "\033[31m";
+    private static final String GREEN = "\033[32m";
+    private static final String YELLOW = "\033[33m";
+
+    private static User user;
 
     public static void main(String[] args) throws IOException {
-        Path path = Path.of(
-                "C:\\Users\\roniy\\software_engeeniering\\12th\\ReGit_POC\\ReGit-Prototype\\playground\\src"
-        );
+        user = login();
 
-//        Blob blob = Blob.fromPath(
-//                file
-//        );
-//
-        Tree tree = TreeBuilder.buildTree(path);
+        printHelp();
 
-        Commit commit = new Commit(
-                tree.getObjectId(),
-                Optional.empty(),
-                user,
-                Timestamp.now(),
-                "tung tung tung sahur"
-        );
+        while (true) {
+            System.out.println("Enter the command you want to use: ");
 
-//        Branch main = new Branch("main", commit.getObjectId());
-//
-//        Branch.saveHead(main);
+            if (!reader.hasNextLine()) {
+                exitRegit();
+                return;
+            }
 
-//        Branch main = Branch.loadMain();
-//
-//        main.loadCurrentCommit(path);
+            String command = reader.nextLine().strip();
 
-        Archivable.storeMap();
-        //        user = login();
-//
-//        System.out.println("Enter the command you want to use: ");
-//
-//        String command = reader.nextLine().strip();
-//
-//        if (command.equals("commit")) {
-//            commit();
-//        } else if (command.equals("diff")){
-//            diff();
-//        } else if (command.equals("exit")){
-//          exitRegit();
-//        } else {
-//            System.out.println("Invalid command!");
-//        }
+            try {
+                switch (command) {
+                    case "commit" -> commit();
+                    case "comment" -> comment();
+                    case "diff" -> diff();
+                    case "help" -> printHelp();
+                    case "exit" -> {
+                        exitRegit();
+                        return;
+                    }
+                    case "" -> {}
+                    default -> System.out.println("Invalid command! Type help to see the commands.");
+                }
+            } catch (IOException | RuntimeException e) {
+                System.out.println("Command failed: " + e);
+            }
+        }
+    }
+
+    /**
+     * Print the commands of the cli
+     */
+    private static void printHelp(){
+        System.out.println("Commands:");
+        System.out.println("  commit   commit every file and directory under a source directory");
+        System.out.println("  comment  add a comment on lines of a file");
+        System.out.println("  diff     show the diff of a file between two commits");
+        System.out.println("  help     show this list");
+        System.out.println("  exit     save and quit");
     }
 
     /**
@@ -69,35 +74,127 @@ public class Main {
      * @return A User object based on what the user entered
      */
     private static User login(){
-        System.out.println("Enter your username: ");
-        String username = reader.nextLine();
-
-        System.out.println("Enter your email: ");
-        String email = reader.nextLine();
+        String username = readField("Enter your username: ");
+        String email = readField("Enter your email: ");
 
         return new User(username, email);
     }
 
     /**
-     * Make a commit
+     * Read a user field, which must not be empty or contain spaces, commas or '=' since commits store it that way
+     * @param prompt the prompt to show
+     * @return the field
+     */
+    private static String readField(String prompt){
+        while (true) {
+            System.out.println(prompt);
+            String field = reader.nextLine().strip();
+
+            if (!field.isEmpty() && !field.matches(".*[\\s,=].*")) {
+                return field;
+            }
+
+            System.out.println("It must not be empty or contain spaces, commas or '='.");
+        }
+    }
+
+    /**
+     * Commit every file and directory under a source directory on top of the last commit
      * @throws IOException
      */
     private static void commit() throws IOException {
-        System.out.println("Enter the path for the tree: ");
-        String path = reader.nextLine().strip();
+        System.out.println("Enter the source directory to commit: ");
+        Path directory = Path.of(reader.nextLine().strip());
+
+        if (!Files.isDirectory(directory)) {
+            System.out.println("Not a directory: " + directory);
+            return;
+        }
 
         System.out.println("Enter the message for the commit: ");
         String message = reader.nextLine().strip();
 
-        Tree tree = TreeBuilder.buildTree(Path.of(path));
+        Branch main = Branch.loadMain();
+        main.commit(directory, message);
+        Branch.saveHead(main);
 
-        Commit commit = new Commit(
-                tree.getObjectId(),
-                Optional.empty(),
-                user,
-                Timestamp.now(),
-                message
-        );
+        saveState();
+
+        System.out.println("Committed " + main.getLastCommitId().getHex());
+    }
+
+    /**
+     * Add a comment on a range of lines in a file
+     */
+    private static void comment() {
+        System.out.println("Enter the path of the file, relative to the source directory: ");
+        Path path = Path.of(reader.nextLine().strip()).normalize();
+
+        if (path.isAbsolute() || path.toString().isEmpty() || path.startsWith("..")) {
+            System.out.println("The path must be relative to the source directory, like others/second");
+            return;
+        }
+
+        int startLine = readLineNumber("Enter the start line: ");
+        int endLine = readLineNumber("Enter the end line: ");
+
+        if (endLine < startLine) {
+            System.out.println("The end line must not be before the start line.");
+            return;
+        }
+
+        System.out.println("Enter the comment: ");
+        String content = reader.nextLine();
+
+        CommentLoader.addComment(path, new Comment(content, startLine, endLine));
+        CommentLoader.store();
+
+        System.out.println("Added a comment on " + path + " lines " + startLine + "-" + endLine);
+    }
+
+    /**
+     * Read a line number, which must be at least 1
+     * @param prompt the prompt to show
+     * @return the line number
+     */
+    private static int readLineNumber(String prompt){
+        while (true) {
+            System.out.println(prompt);
+            String input = reader.nextLine().strip();
+
+            try {
+                int line = Integer.parseInt(input);
+
+                if (line >= 1) {
+                    return line;
+                }
+            } catch (NumberFormatException ignored) {}
+
+            System.out.println("Enter a whole number, starting from 1.");
+        }
+    }
+
+    /**
+     * Read a commit hash and load the commit from the archive
+     * @param prompt the prompt to show
+     * @return the commit
+     * @throws IOException
+     */
+    private static Commit readCommit(String prompt) throws IOException {
+        System.out.println(prompt);
+        String hex = reader.nextLine().strip().toLowerCase();
+
+        if (!hex.matches("[0-9a-f]{40}")) {
+            throw new IllegalArgumentException("A commit hash is 40 hex characters: " + hex);
+        }
+
+        RegitObjects.ObjectId id = RegitObjects.ObjectId.fromHex(hex, RegitObjects.ObjectType.COMMIT);
+
+        if (Archivable.loadRecord(id).type() != RegitObjects.ObjectType.COMMIT) {
+            throw new IllegalArgumentException("Object " + hex + " is not a commit");
+        }
+
+        return (Commit) Archivable.unarchive(id);
     }
 
     /**
@@ -105,74 +202,69 @@ public class Main {
      * @throws IOException
      */
     private static void diff() throws IOException {
-        System.out.println("Enter the commit hash for the old commit: ");
-        String oldHash = reader.nextLine();
+        Commit oldCommit = readCommit("Enter the commit hash for the old commit: ");
+        Commit newCommit = readCommit("Enter the commit hash for the new commit: ");
 
-        System.out.println("Enter the commit hash for the new commit: ");
-        String newHash = reader.nextLine();
+        System.out.println("Enter the path of the file, relative to the source directory: ");
+        Path path = Path.of(reader.nextLine().strip()).normalize();
 
-        System.out.println("Enter the path to the file to apply diff: ");
-        String filePath = reader.nextLine();
+        DiffCalculator.FileDiff diff = new DiffCalculator(oldCommit, newCommit).calculate(path);
 
-        RegitObjects.ObjectId oldId = RegitObjects.ObjectId.fromPath(
-                Path.of(oldHash.substring(0,2), oldHash.substring(2)),
-                RegitObjects.ObjectType.COMMIT
-        );
+        switch (diff.pathState()) {
+            case ADDED -> System.out.println(path + " is not in the old commit, it was added in the new one.");
+            case DELETED -> System.out.println(path + " was deleted in the new commit.");
+            case NONEXSISTANT -> System.out.println(path + " is not a file in either commit.");
+            case PERSERVED -> {
+                if (diff.LCS() == null) {
+                    System.out.println(path + " is not a file in either commit.");
+                } else if (diff.additionList().isEmpty() && diff.deletionList().isEmpty()) {
+                    System.out.println("No changes in " + path);
+                } else {
+                    printDiff(diff);
+                }
+            }
+        }
+    }
 
-        RegitObjects.ObjectId newId = RegitObjects.ObjectId.fromPath(
-                Path.of(newHash.substring(0,2), newHash.substring(2)),
-                RegitObjects.ObjectType.COMMIT
-        );
-
-        DiffCalculator calculator = new DiffCalculator(
-                (Commit) Archivable.unarchive(oldId),
-                (Commit) Archivable.unarchive(newId)
-        );
-
-        DiffCalculator.FileDiff diff = calculator.calculate(Path.of(filePath));
-
+    /**
+     * Print a diff: the common text in yellow, deletions in red and additions in green
+     * @param diff the diff of a file
+     */
+    private static void printDiff(DiffCalculator.FileDiff diff){
         String LCSString = BytesFormatter.bytesToString(diff.LCS());
 
+        for (int i = 0; i <= LCSString.length(); i++){
+            int offset = i;
 
-        String RESET = "\033[0m";
-        String RED = "\033[31m";
-        String GREEN = "\033[32m";
-        String YELLOW = "\033[33m";
-
-        int i;
-        for (i = 0; i < LCSString.length(); i++){
-            int finalI = i;
             diff.deletionList().forEach(deletion -> {
-                if (deletion.byteOffset() == finalI){
+                if (deletion.byteOffset() == offset){
                     System.out.print(RED + "{-" + deletion.diff() + "}" + RESET);
                 }
             });
 
             diff.additionList().forEach(addition -> {
-                if (addition.byteOffset() == finalI){
+                if (addition.byteOffset() == offset){
                     System.out.print(GREEN + "{+" + addition.diff() + "}" + RESET);
                 }
             });
 
-            System.out.print(YELLOW + LCSString.substring(i,i+1) + RESET);
+            if (i < LCSString.length()) {
+                System.out.print(YELLOW + LCSString.charAt(i) + RESET);
+            }
         }
 
-        int finalI = i;
-        diff.deletionList().forEach(deletion -> {
-            if (deletion.byteOffset() == finalI){
-                System.out.print(RED + "{-" + deletion.diff() + "}" + RESET);
-            }
-        });
+        System.out.println();
+    }
 
-        diff.additionList().forEach(addition -> {
-            if (addition.byteOffset() == finalI){
-                System.out.print(GREEN + "{+" + addition.diff() + "}" + RESET);
-            }
-        });
-
+    /**
+     * Save the object map and the comments
+     */
+    private static void saveState(){
+        Archivable.storeMap();
+        CommentLoader.store();
     }
 
     private static void exitRegit(){
-        Archivable.storeMap();
+        saveState();
     }
 }

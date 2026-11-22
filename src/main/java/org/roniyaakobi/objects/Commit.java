@@ -155,10 +155,7 @@ public final class Commit extends RegitObject {
     }
 
     public void load(Path path) throws IOException {
-        System.out.println("First time");
         Tree tree = (Tree) Archivable.unarchive(treeId);
-        System.out.println("second time");
         tree.loadTree(path);
-        System.out.println("third");
     }
 }

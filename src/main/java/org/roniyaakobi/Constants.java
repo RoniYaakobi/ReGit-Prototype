@@ -10,5 +10,7 @@ public class Constants {
     public static final Path HEAD = BASE_PATH.resolve("HEAD");
 
     public static final Path CURRENT = BASE_PATH.resolve("CURRENT");
+
+    public static final Path COMMENTS_PATH = BASE_PATH.resolve("comments.map");
     public static final String NONE = "None";
 }

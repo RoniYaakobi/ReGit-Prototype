@@ -15,15 +15,6 @@ import java.util.zip.DeflaterOutputStream;
 public final class Blob extends RegitObject {
     public record StreamData(byte[] bytes, int length) {}
 
-    /**
-     * A comment on a range of lines in a blob. Comments are stored on the tree entries that point to blobs
-     */
-    public record Comment(String comment, int startLine, int endLine) {
-        public static final String commentDelimeter = "\u001E";
-        public static final String commentFieldDelimeter = "\u001F";
-
-    }
-
     private final Path path;
 
     private final long size;

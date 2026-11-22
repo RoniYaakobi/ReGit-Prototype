@@ -1,12 +1,15 @@
 package org.roniyaakobi.utils;
 
 public class User {
+    public static User instance;
     private String name;
     private String email;
 
     public User(String name, String email){
         this.name = name;
         this.email = email;
+
+        instance = this;
     }
 
     @Override

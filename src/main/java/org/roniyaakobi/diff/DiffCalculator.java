@@ -86,8 +86,8 @@ public class DiffCalculator {
                 newTree.getObjectId().getPath().toString() + "\n"
         );
 
-        List<Tree.TreeEntry> oldEntries = oldTree.getEntries();
-        List<Tree.TreeEntry> newEntries = newTree.getEntries();
+        List<Tree.TreeEntry> oldEntries = List.copyOf(oldTree.getEntries().values());
+        List<Tree.TreeEntry> newEntries = List.copyOf(newTree.getEntries().values());
 
         if (oldEntries.size() == 0 &&
                 newEntries.size() == 0) {

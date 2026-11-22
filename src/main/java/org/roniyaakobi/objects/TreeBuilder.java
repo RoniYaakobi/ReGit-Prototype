@@ -16,7 +16,6 @@ public class TreeBuilder {
      * @throws IOException
      */
     public static Tree buildTree(Path directory) throws IOException {
-        Logger.log("Building tree: " + directory.toString());
         List<Tree.TreeEntry> treeEntries = new ArrayList<>();
 
         try (var paths = Files.walk(directory, 1)){
@@ -31,8 +30,7 @@ public class TreeBuilder {
                             new Tree.TreeEntry(
                                     name,
                                     subTree.getObjectId(),
-                                    RegitObjects.ObjectType.TREE,
-                                    List.of()
+                                    RegitObjects.ObjectType.TREE
                             )
                     );
                 } else {
@@ -41,8 +39,7 @@ public class TreeBuilder {
                             new Tree.TreeEntry(
                                     name,
                                     file.getObjectId(),
-                                    RegitObjects.ObjectType.BLOB,
-                                    List.of()
+                                    RegitObjects.ObjectType.BLOB
                             )
                     );
                 }
